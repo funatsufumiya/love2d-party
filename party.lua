@@ -42,7 +42,7 @@ uniform float spread = 0.0f;
 varying vec4 vertexColor;
 
 //Helper vars and functions
-const float deg120 = 2.0943951024;
+const float deg90 = 1.5707963268;
 
 float rand(float n)
 {
@@ -63,8 +63,8 @@ vec4 position(mat4 transform, vec4 position)
 {
 
   int vertexID = int(position.x);
-  int particleIndex = vertexID / 3;
-  float triangleIndex = mod(vertexID, 3);
+  int particleIndex = vertexID / 6;
+  float triangleIndex = mod(vertexID, 6);
 
   float particleSeed = rand(particleIndex / particleCount);
 
@@ -94,7 +94,15 @@ vec4 position(mat4 transform, vec4 position)
   float angle = randrange(minStartAngle, maxStartAngle, particleSeed+29.0f);
   float rotationSpeed = randrange(minRotationSpeed, maxRotationSpeed, particleSeed+38.0f);
   angle += rotationSpeed * livedfor;
-  angle += deg120 * triangleIndex;
+  float cornerAngle = 0.0f;
+  if (triangleIndex == 0.0f) cornerAngle = 0.0f;
+  else if (triangleIndex == 1.0f) cornerAngle = deg90;
+  else if (triangleIndex == 2.0f) cornerAngle = deg90 * 2.0f;
+  else if (triangleIndex == 3.0f) cornerAngle = 0.0f;
+  else if (triangleIndex == 4.0f) cornerAngle = deg90 * 2.0f;
+  else cornerAngle = deg90 * 3.0f;
+
+  angle += cornerAngle;
 
   float radius = randrange(minRadius, maxRadius, particleSeed-15.0f);
 
@@ -126,11 +134,15 @@ local party = setmetatable({}, {
     assert(bufferSize > 0, "Buffer size must be above zero")
     local buffer = {}
 
-    for i = 1, bufferSize * 3 do
+    for i = 1, bufferSize * 6 do
       buffer[i] = {i-1, 0, 0, 0}
-      if i % 3 == 0 then buffer[i][3] = 0.5 buffer[i][4] = 0.0439059655300 end
-      if i % 3 == 1 then buffer[i][3] = 0   buffer[i][4] = 0.9560940344573 end
-      if i % 3 == 2 then buffer[i][3] = 1   buffer[i][4] = 0.9560940344573 end
+      local m = i % 6
+      if m == 1 then buffer[i][3] = 0   buffer[i][4] = 0 end -- v0: (0,0)
+      if m == 2 then buffer[i][3] = 1   buffer[i][4] = 0 end -- v1: (1,0)
+      if m == 3 then buffer[i][3] = 1   buffer[i][4] = 1 end -- v2: (1,1)
+      if m == 4 then buffer[i][3] = 0   buffer[i][4] = 0 end -- v3: (0,0)
+      if m == 5 then buffer[i][3] = 1   buffer[i][4] = 1 end -- v4: (1,1)
+      if m == 0 then buffer[i][3] = 0   buffer[i][4] = 1 end -- v5: (0,1)
     end
 
     self.mesh = love.graphics.newMesh({
